@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌌 Royal Mood Tracker Ultimate</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Montserrat:wght@700&display=swap');
+
+body {
+  margin:0; padding:0;
+  font-family:'Poppins', sans-serif;
+  color:#fff;
+  overflow-x:hidden;
+  position: relative;
+  background: linear-gradient(120deg,#1A237E,#6A1B9A);
+  animation: bgShift 15s ease-in-out infinite alternate;
+}
+@keyframes bgShift{
+  0%{ background: linear-gradient(120deg,#1A237E,#6A1B9A);}
+  50%{ background: linear-gradient(120deg,#283593,#8E24AA);}
+  100%{ background: linear-gradient(120deg,#1A237E,#6A1B9A);}
+}
+
+#stars { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; }
+
+h1,h2{ font-family:'Montserrat', sans-serif; text-align:center; margin:20px 0; text-shadow: 2px 2px 15px rgba(0,0,0,0.7); }
+.section{ margin:25px auto; max-width:950px; }
+
+.controls{ display:flex; justify-content:center; align-items:center; gap:15px; margin:15px 0; }
+.controls button{ padding:12px 22px; border:none; border-radius:22px; background: linear-gradient(135deg,#283593,#6A1B9A); color:#fff; font-weight:600; cursor:pointer; box-shadow:0 8px 25px rgba(0,0,0,0.6); transition:0.3s; }
+.controls button:hover{ transform:scale(1.1); box-shadow:0 0 25px #6A1B9A,0 0 50px #283593,0 12px 25px rgba(0,0,0,0.7); }
+
+.mood-form{ margin:0 auto; padding:25px; max-width:450px; border-radius:25px; background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); box-shadow:0 15px 45px rgba(0,0,0,0.8); transition:0.3s; }
+.mood-form:hover{ box-shadow:0 20px 60px rgba(0,0,0,0.9); }
+.mood-form label{ display:block; font-weight:600; margin-top:15px; font-size:16px; }
+.mood-form select, .mood-form input[type="color"]{ width:100%; margin-top:10px; padding:12px; border-radius:15px; border:none; outline:none; font-size:15px; background: rgba(255,255,255,0.1); color:#fff; cursor:pointer; }
+.mood-form button{ margin-top:20px; padding:14px 26px; width:100%; font-weight:600; border-radius:25px; background: linear-gradient(135deg,#6A1B9A,#283593); color:#fff; cursor:pointer; box-shadow:0 8px 35px rgba(0,0,0,0.7); transition:0.3s; }
+.mood-form button:hover{ transform:scale(1.05); box-shadow:0 0 35px #6A1B9A,0 0 60px #283593,0 12px 25px rgba(0,0,0,0.7); }
+.reset-button{ background: linear-gradient(135deg,#4A148C,#6A1B9A); color:#fff; margin-top:15px; }
+.reset-button:hover{ transform:scale(1.05); box-shadow:0 0 35px #6A1B9A,0 0 60px #7B1FA2,0 12px 25px rgba(0,0,0,0.7); }
+
+.calendar{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:3px;
+  margin:20px auto;
+  max-width:700px;
+}
+.day,.weekday{ border-radius:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; perspective:1200px; position:relative; }
+.weekday{ background: rgba(255,255,255,0.1); font-weight:600; font-size:14px; color:#fff; height:35px; }
+.day{ width:55px; height:55px; }
+.day .card{ width:100%; height:100%; border-radius:20px; display:flex; align-items:center; justify-content:center; flex-direction:column; font-weight:600; font-size:18px; color:#fff; box-shadow:0 10px 25px rgba(0,0,0,0.7); transform-style: preserve-3d; transition: transform 0.5s, box-shadow 0.5s; background: rgba(255,255,255,0.05); }
+.day:hover .card{ transform: rotateX(15deg) rotateY(15deg) scale(1.12); box-shadow:0 0 35px #6A1B9A,0 0 70px #283593,0 15px 35px rgba(0,0,0,0.7); }
+.day span.emoji{ font-size:14px; margin-top:3px; transition: transform 0.3s; }
+.day:hover span.emoji{ transform: translateY(-4px) scale(1.15); }
+
+.tooltip{ position:absolute; bottom:110%; left:50%; transform:translateX(-50%); background: rgba(0,0,0,0.85); color:#fff; padding:6px 14px; border-radius:14px; font-size:14px; opacity:0; pointer-events:none; transition:0.2s; }
+.day:hover .tooltip{ opacity:1; }
+
+.summary{ margin:20px auto; padding:20px; border-radius:25px; background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); box-shadow:0 15px 45px rgba(0,0,0,0.8); }
+canvas{ margin-top:20px; border-radius:25px; background: rgba(255,255,255,0.05); }
+
+.year-filter select{ padding:10px 16px; border-radius:15px; border:none; outline:none; cursor:pointer; }
+
+#moodChart{ height:320px !important; width:100%; }
+#yearChart{ height:380px !important; width:100%; }
+
+@media screen and (max-width:768px){ 
+  .calendar{grid-template-columns:repeat(7,1fr);} 
+  .day,.weekday{width:45px;height:45px;font-size:12px;} 
+  .day .card{font-size:16px;} 
+  .day span.emoji{ font-size:12px; } 
+  .summary{width:95%;padding:15px;} 
+  canvas{width:100% !important;height:auto !important;} 
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<h1>🌌 Royal Mood Tracker Ultimate</h1>
+
+<div class="controls">
+  <button onclick="changeMonth(-1)">⬅️ Previous</button>
+  <span id="monthYear"></span>
+  <button onclick="changeMonth(1)">Next ➡️</button>
+</div>
+
+<div class="mood-form">
+  <label for="mood">How do you feel today?</label>
+  <select id="mood">
+    <option value="Happy">😊 Happy</option>
+    <option value="Stressed">😟 Stressed</option>
+    <option value="Excited">🔥 Excited</option>
+    <option value="Calm">😌 Calm</option>
+    <option value="Sad">😢 Sad</option>
+  </select>
+  <label for="color">Choose a color:</label>
+  <input type="color" id="color" value="#FFD700">
+  <button onclick="saveMood()">💾 Save Mood</button>
+  <button class="reset-button" onclick="resetMonth()">🗑️ Reset Month</button>
+</div>
+
+<div class="calendar" id="calendar"></div>
+
+<div class="summary">
+  <h2>📊 Monthly Pie Chart</h2>
+  <canvas id="moodChart"></canvas>
+  <button onclick="downloadChart()">⬇️ Download Pie Chart</button>
+  <button onclick="downloadCSV()">⬇️ Download CSV</button>
+</div>
+
+<div class="summary">
+  <h2>📊 Yearly Mood Comparison</h2>
+  <div class="year-filter">
+    <label for="yearSelect">Select Year: </label>
+    <select id="yearSelect" onchange="updateYearChart()"></select>
+  </div>
+  <canvas id="yearChart"></canvas>
+  <button onclick="downloadYearChart()">⬇️ Download Year Chart</button>
+</div>
+
+<script>
+// --- نجوم متلألئة ---
+const canvasStars=document.getElementById('stars');
+const ctxStars=canvasStars.getContext('2d');
+let W=window.innerWidth,H=window.innerHeight;
+canvasStars.width=W; canvasStars.height=H;
+const stars=[];
+const numStars=200;
+for(let i=0;i<numStars;i++){
+  stars.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+0.5, alpha:Math.random(), dAlpha:0.005+Math.random()*0.02});
+}
+function animateStars(){
+  ctxStars.clearRect(0,0,W,H);
+  for(let s of stars){
+    s.alpha += s.dAlpha;
+    if(s.alpha>1||s.alpha<0) s.dAlpha*=-1;
+    ctxStars.beginPath();
+    ctxStars.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctxStars.fillStyle=`rgba(255,255,255,${s.alpha})`;
+    ctxStars.fill();
+  }
+  requestAnimationFrame(animateStars);
+}
+animateStars();
+window.addEventListener('resize',()=>{W=window.innerWidth;H=window.innerHeight;canvasStars.width=W;canvasStars.height=H;});
+
+// --- الكود الكامل للمزاج والتقويم والرسوم البيانية ---
+const calendar=document.getElementById('calendar');
+const monthYear=document.getElementById('monthYear');
+const ctx=document.getElementById('moodChart').getContext('2d');
+const ctxYear=document.getElementById('yearChart').getContext('2d');
+let chart, yearChart;
+let todayDate=new Date();
+let currentYear=todayDate.getFullYear();
+let currentMonth=todayDate.getMonth();
+const moods=["Happy","Stressed","Excited","Calm","Sad"];
+const moodColors={"Happy":"#FFD700","Stressed":"#FF5252","Excited":"#FF4081","Calm":"#18FFFF","Sad":"#651FFF"};
+const weekdays=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const yearSelect=document.getElementById('yearSelect');
+for(let y=currentYear-4;y<=currentYear;y++){
+  const option=document.createElement('option'); option.value=y; option.textContent=y;
+  if(y===currentYear) option.selected=true; yearSelect.appendChild(option);
+}
+
+function createCalendar(year,month){
+  calendar.innerHTML="";
+  weekdays.forEach(d=>{
+    const wd=document.createElement('div'); wd.classList.add('weekday'); wd.textContent=d; calendar.appendChild(wd);
+  });
+  const firstDay=new Date(year,month,1); const lastDay=new Date(year,month+1,0);
+  let moodCount={}; let monthlyData=[];
+  for(let i=0;i<firstDay.getDay();i++){calendar.appendChild(document.createElement('div'));}
+  for(let i=1;i<=lastDay.getDate();i++){
+    const day=document.createElement('div'); day.classList.add('day');
+    const card=document.createElement('div'); card.classList.add('card');
+    const dayNum=document.createElement('div'); dayNum.textContent=i;
+    const emojiSpan=document.createElement('span'); emojiSpan.classList.add('emoji');
+    const saved=localStorage.getItem(`${year}-${month+1}-${i}`);
+    const tooltip=document.createElement('div'); tooltip.classList.add('tooltip');
+    if(saved){
+      const data=JSON.parse(saved); card.style.background=data.color; day.title=data.mood; tooltip.textContent=data.mood;
+      emojiSpan.textContent=getEmoji(data.mood); if(isDark(data.color)) card.style.color="white"; else card.style.color="black";
+      moodCount[data.mood]=(moodCount[data.mood]||0)+1; monthlyData.push({day:i,mood:data.mood,color:data.color});
+    } else { tooltip.textContent="No mood"; emojiSpan.textContent=""; monthlyData.push({day:i,mood:"",color:""});}
+    card.appendChild(dayNum); card.appendChild(emojiSpan); day.appendChild(card); day.appendChild(tooltip);
+    day.onclick=()=>{document.getElementById('mood').value=saved?JSON.parse(saved).mood:"Happy"; document.getElementById('color').value=saved?JSON.parse(saved).color:"#FFD700"; todayDate=new Date(year,month,i);};
+    calendar.appendChild(day);
+  }
+  const monthNames=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  monthYear.textContent=`${monthNames[month]} ${year}`;
+  window.currentMonthlyData=monthlyData; updateChart(moodCount); updateYearChart();
+}
+
+function getEmoji(mood){ return {"Happy":"😊","Stressed":"😟","Excited":"🔥","Calm":"😌","Sad":"😢"}[mood]||""; }
+
+function saveMood(){
+  const mood=document.getElementById('mood').value;
+  const color=document.getElementById('color').value;
+  const day=todayDate.getDate(); const year=todayDate.getFullYear(); const month=todayDate.getMonth();
+  localStorage.setItem(`${year}-${month+1}-${day}`,JSON.stringify({mood,color}));
+  createCalendar(currentYear,currentMonth);
+}
+
+function changeMonth(step){
+  currentMonth+=step;
+  if(currentMonth<0){ currentMonth=11; currentYear--; } 
+  else if(currentMonth>11){ currentMonth=0; currentYear++; }
+  createCalendar(currentYear,currentMonth);
+}
+
+function updateChart(moodCount){
+  if(chart) chart.destroy();
+  const labels=Object.keys(moodCount); const data=Object.values(moodCount);
+  chart=new Chart(ctx,{type:'pie',data:{labels,datasets:[{data, backgroundColor:labels.map(l=>moodColors[l]||"#ccc")}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#fff',font:{size:14}}}}}});
+}
+
+function downloadChart(){ const link=document.createElement('a'); link.download=`mood-chart-${currentYear}-${currentMonth+1}.png`; link.href=document.getElementById('moodChart').toDataURL("image/png"); link.click(); }
+function downloadCSV(){ let csv="Day,Mood,Color\n"; window.currentMonthlyData.forEach(item=>{csv+=`${item.day},${item.mood},${item.color}\n`;}); const blob=new Blob([csv],{type:'text/csv'}); const link=document.createElement('a'); link.href=URL.createObjectURL(blob); link.download=`mood-data-${currentYear}-${currentMonth+1}.csv`; link.click(); }
+
+function updateYearChart(){
+  const selectedYear=parseInt(yearSelect.value);
+  let datasets=moods.map(mood=>{
+    let data=[]; for(let m=0;m<12;m++){ let count=0; const lastDay=new Date(selectedYear,m+1,0).getDate(); for(let d=1;d<=lastDay;d++){ const saved=localStorage.getItem(`${selectedYear}-${m+1}-${d}`); if(saved && JSON.parse(saved).mood===mood) count++; } data.push(count);}
+    return {label:mood,data,backgroundColor:moodColors[mood]};
+  });
+  const monthLabels=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  if(yearChart) yearChart.destroy();
+  yearChart=new Chart(ctxYear,{type:'bar',data:{labels:monthLabels,datasets:datasets},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#fff',font:{size:14}}}},scales:{y:{beginAtZero:true,ticks:{color:'#fff',precision:0}}, x:{ticks:{color:'#fff'}}}}});
+}
+
+function downloadYearChart(){ const link=document.createElement('a'); link.download=`year-mood-chart-${yearSelect.value}.png`; link.href=document.getElementById('yearChart').toDataURL("image/png"); link.click(); }
+
+function resetMonth(){ const lastDay=new Date(currentYear,currentMonth+1,0).getDate(); for(let d=1;d<=lastDay;d++){localStorage.removeItem(`${currentYear}-${currentMonth+1}-${d}`); } 
+createCalendar(currentYear,currentMonth); 
+}
+
+function isDark(color){
+  const c=color.substring(1);
+  const rgb=parseInt(c,16);
+  const r=(rgb>>16)&0xff;
+  const g=(rgb>>8)&0xff;
+  const b=(rgb>>0)&0xff;
+  return 0.299*r + 0.587*g + 0.114*b < 128;
+}
+
+
+createCalendar(currentYear,currentMonth);
+</script>
+</body>
+</html>
