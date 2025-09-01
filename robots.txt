@@ -1,0 +1,6 @@
+
+Vous avez envoyé
+User-agent: *
+Allow: /
+
+Sitemap: https://<username>.github.io/<repo>/sitemap.xml
